@@ -1,0 +1,47 @@
+specVersion: 0.0.1
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LobsterDAO
+    network: mainnet
+    source:
+      address: "0x026224a2940bfe258d0dbe947919b62fe321f042"
+      abi: LobsterDAO
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - ApprovalForAll
+        - OwnershipTransferred
+        - SetBaseURI
+        - SetChainlinkConfig
+        - SetDefaultURI
+        - SetMinter
+        - SetRandomSeed
+        - Transfer
+      abis:
+        - name: LobsterDAO
+          file: ./abis/LobsterDAO.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,indexed uint256)
+          handler: handleApproval
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: SetBaseURI(indexed string)
+          handler: handleSetBaseURI
+        - event: SetChainlinkConfig(uint256,bytes32)
+          handler: handleSetChainlinkConfig
+        - event: SetDefaultURI(indexed string)
+          handler: handleSetDefaultURI
+        - event: SetMinter(indexed address)
+          handler: handleSetMinter
+        - event: SetRandomSeed(uint256,bytes32)
+          handler: handleSetRandomSeed
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/lobster-dao.ts
