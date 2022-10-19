@@ -23,44 +23,45 @@ export function handleTransfer(event: TransferEvent): void {
     event.params.tokenId.toHexString(),
   ]);
 
-  let previousOwner = Owner.load(event.params.from.toHexString());
-  let newOwner = Owner.load(event.params.to.toHexString());
-  let token = Token.load(event.params.tokenId.toHexString());
-
   let saleId = event.transaction.hash
     .toHexString()
     .concat(":".concat(event.transactionLogIndex.toHexString()));
+
+  // Load all entities
+
+  let previousOwner = Owner.load(event.params.from.toHexString());
+  let newOwner = Owner.load(event.params.to.toHexString());
+  let token = Token.load(event.params.tokenId.toHexString());
   let sale = Sale.load(saleId);
   let contract = Contract.load(event.address.toHexString());
   let nftInstance = LobsterDAO.bind(event.address);
 
-  if (previousOwner === null) {
-    // Mint case
-    log.info("Mint case detected", []);
+  if (!previousOwner) {
+    log.info("Previous owner didnt exist as entity ", []);
     previousOwner = new Owner(event.params.from.toHexString());
     previousOwner.balance = BigInt.fromI32(0);
   } else {
-    // Transfer case
+    log.info("Previous owner existed as entity ", []);
     let prevBalance = previousOwner.balance;
     if (prevBalance && prevBalance > ZERO_BI) {
       previousOwner.balance = prevBalance.minus(ONE_BI);
     }
   }
 
-  if (newOwner === null) {
+  if (!newOwner) {
+    log.info("New owner didnt exist as entity ", []);
     newOwner = new Owner(event.params.to.toHexString());
     newOwner.balance = ONE_BI;
-    log.info("Burn case detected", []);
   } else {
-    log.info("Previous balance", []);
-
+    log.info("New owner existed as entity ", []);
     let prevBalance = newOwner.balance;
     if (prevBalance !== null) {
       newOwner.balance = prevBalance.plus(ONE_BI);
     }
   }
 
-  if (token == null) {
+  if (!token) {
+    log.info("Token didnt exist as entity ", []);
     token = new Token(event.params.tokenId.toHexString());
     token.contract = event.address.toHexString();
 
@@ -76,41 +77,88 @@ export function handleTransfer(event: TransferEvent): void {
   let tokenAmount: BigInt = new BigInt(0);
   let isErc20TokenTransfer = false;
 
-  if (sale == null) {
+  log.info("Lets find a sale... ", []);
+  if (!sale) {
+    log.info("Sale didnt exist as entity ", []);
     const logs = transactionReceipt.logs;
+    log.info("Found {} log entries to process for tx #{}", [
+      logs.length.toString(),
+      event.transaction.hash.toHexString(),
+    ]);
+    logs.forEach((eventLog) => {});
     for (let logIndex = 0; logIndex < logs.length; logIndex++) {
+      log.info("Processing index {} for tx #{}", [
+        logIndex.toString(),
+        event.transaction.hash.toHexString(),
+      ]);
       const eventLog = logs[logIndex];
       const logAddress = eventLog.address.toHexString();
       const eventSignature = eventLog.topics[0].toHexString();
 
-      if (eventSignature === ERC20TransferTopic) {
+      // const receipt = event.receipt;
+      // if (receipt) {
+      //   const data = receipt.logs[logIndex].data;
+      //   const decoded = ethereum.decode("(address,address,uint256)", data);
+      //   const tuple = decoded!.toTuple();
+      // }
+
+      // for (
+      //   let topicsIndex = 0;
+      //   topicsIndex < eventLog.topics.length;
+      //   topicsIndex++
+      // ) {
+      //   log.info("Topic iterated over : {}, for tx # {} ", [
+      //     eventLog.topics[topicsIndex].toHexString(),
+      //     event.transaction.hash.toHexString(),
+      //   ]);
+      // }
+
+      // log.info("Topic being processed : {}, of type {} ", [
+      //   eventSignature,
+      //   typeof eventSignature,
+      // ]);
+      // log.info("ERC20 topic to match : {}, of type {} ", [
+      //   ERC20TransferTopic,
+      //   typeof ERC20TransferTopic,
+      // ]);
+      if (eventSignature == ERC20TransferTopic) {
+        log.info("Found Transaction Event Topic", []);
         isErc20TokenTransfer = true;
         tokenContract = logAddress;
-        let decoded = ethereum.decode(
-          "(address,address,uint256)",
-          eventLog.data
-        );
 
-        if (decoded !== null) {
-          let decodedArray = decoded.toArray();
-          if (
-            decodedArray &&
-            decodedArray !== null &&
-            decodedArray[0] &&
-            decodedArray[0] !== null
-          ) {
-            log.debug("Decoded from address is: {} ", [
-              decodedArray[0].toAddress().toString(),
-            ]);
-            log.debug("Decoded to address is: {} ", [
-              decodedArray[1].toAddress().toString(),
-            ]);
-            log.debug("Decoded value is: {} ", [
-              decodedArray[2].toBigInt().toString(),
-            ]);
-            tokenAmount = decodedArray[2].toBigInt();
-          }
+        let data = eventLog.topics;
+        log.info(
+          "Receipt data is available: {} for event signature {} for TX #{}",
+          [
+            data.toString(),
+            eventSignature,
+            event.transaction.hash.toHexString(),
+          ]
+        );
+        let decoded = ethereum.decode("(address,address,uint256)", data[0]);
+        if (decoded) {
+          log.info("Decoded data in string form {}", [decoded.toString()]);
         }
+        if (decoded) {
+          let decodedTuple = decoded.toTuple();
+          log.info("Decoded from address is: {} ", [
+            decodedTuple[0].toAddress().toString(),
+          ]);
+          log.info("Decoded to address is: {} ", [
+            decodedTuple[1].toAddress().toString(),
+          ]);
+          log.info("Decoded value is: {} ", [
+            decodedTuple[2].toBigInt().toString(),
+          ]);
+          tokenAmount = decodedTuple[2].toBigInt();
+        }
+      } else {
+        log.info("Didnt match any transaction. wtf? {}, {}, {} in tx# {}", [
+          (eventSignature == ERC20TransferTopic).toString(),
+          eventSignature,
+          ERC20TransferTopic,
+          event.transaction.hash.toHexString(),
+        ]);
       }
     }
 
