@@ -1,6 +1,6 @@
 specVersion: 0.0.4
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: LobsterDAO
@@ -20,9 +20,9 @@ dataSources:
         - Transfer
       abis:
         - name: LobsterDAO
-          file: ./abis/LobsterDAO.j son
+          file: LobsterDAO/abis/LobsterDAO.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
           receipt: true
-      file: ./src/mapping.ts
+      file: LobsterDAO/LobsterDAO.wasm
