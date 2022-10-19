@@ -37,7 +37,8 @@ export function handleTransfer(event: TransferEvent): void {
   if (previousOwner === null) {
     // Mint case
     log.info("Mint case detected", []);
-    return;
+    previousOwner = new Owner(event.params.from.toHexString());
+    previousOwner.balance = BigInt.fromI32(0);
   } else {
     // Transfer case
     let prevBalance = previousOwner.balance;
@@ -50,7 +51,6 @@ export function handleTransfer(event: TransferEvent): void {
     newOwner = new Owner(event.params.to.toHexString());
     newOwner.balance = ONE_BI;
     log.info("Burn case detected", []);
-    return;
   } else {
     log.info("Previous balance", []);
 
@@ -73,7 +73,7 @@ export function handleTransfer(event: TransferEvent): void {
   token.owner = event.params.to.toHexString();
 
   let tokenContract = "";
-  let tokenAmount: BigInt;
+  let tokenAmount: BigInt = new BigInt(0);
   let isErc20TokenTransfer = false;
 
   if (sale == null) {
@@ -121,7 +121,7 @@ export function handleTransfer(event: TransferEvent): void {
     sale.timestamp = event.block.timestamp;
     sale.block = event.block.number;
     sale.transactionHash = event.transaction.hash.toHexString();
-    sale.tokenAmount;
+    sale.tokenAmount = tokenAmount;
     sale.tokenContract = tokenContract;
   }
 

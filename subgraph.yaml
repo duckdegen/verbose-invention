@@ -20,7 +20,7 @@ dataSources:
         - Transfer
       abis:
         - name: LobsterDAO
-          file: ./abis/LobsterDAO.j son
+          file: ./abis/LobsterDAO.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
